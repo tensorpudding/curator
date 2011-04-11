@@ -11,24 +11,27 @@ DBUS_OBJECT = 'org.curator'
 DBUS_PATH = '/org/curator'
 DBUS_INTERFACE = 'org.curator'
 
-class GConf():
-    def __init__(self):
-        self.gclient = gconf.client_get_default()
+GCONF_NOTIFY_KEY = '/apps/curator/interface/notifications'
+GCONF_INTERVAL_KEY = '/apps/curator/backend/update_interval'
+GCONF_INDICATOR_KEY = '/apps/curator/interface/indicator'
+
+
+class Queue(list):
+
+    def __init__(self, list):
+        list.__init__(self)
+        random.shuffle(list)
+        self.append(list)
+
+
+    def next(self):
+        return self.pop()
+
+    def append(self, item):
+        list.append(self, item)
+        random.shuffle(self)
 
 class DBusService(dbus.service.Object):
-
-    class Queue(list):
-
-        def __init__(self, list):
-            random.shuffle(list)
-            list.__init__(self, list)
-
-        def next(self):
-            return self.pop()
-
-        def append(self, item):
-            list.append(self, item)
-            random.shuffle(self)
 
     def __init__(self):
         # Start up object service
