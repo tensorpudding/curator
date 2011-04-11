@@ -37,45 +37,57 @@ class Database:
             name = os.path.basename(path)
             # By default all are nonrejected
             rej = 0
-            self.cur.execute('insert into wallpapers (name, path, rej) values (?,?,?)',(name,path,rej))
+            self.cur.execute('insert into wallpapers (name, path, rej) values (?,?,?)',((name,path,rej)))
         self.db_conn.commit()
                 
     def set_directory(self, dir):
         # Notice that it completely wipes the table!
         self.cur.execute('delete from wallpapers')
-        image_regex = re.compile(r".+\.jpg|.+\.png|.+\.gif|.+\.bmp")
-        self.__add(filter(lambda file: image_regex.match(file), os.listdir(dir)))
+        self.__add(filter(lambda file: self.regex.match(file), os.listdir(dir)))
 
     def get_entry_by_key(self, key):
-        self.cur.execute('select name, path, rej from wallpapers where id == ?', key)
-        self.cur.fetch()
+        self.cur.execute('select name, path, rej from wallpapers where id=?', (key,))
+        return self.cur.fetch()
 
     def add_by_path(self, path):
         self.__add([path])
 
     def remove_by_path(self, path):
-        self.cur.execute('delete from wallpapers where path == ?', path)
+        self.cur.execute('delete from wallpapers where path == ?', (path,))
         self.db_conn.commit()
 
     def select_all_paths(self):
         self.cur.execute('select path from wallpapers')
-        self.cur.fetchall()
+        return self.cur.fetchall()
 
     def select_all_nonrejects(self):
         self.cur.execute('select id from wallpapers where rej == 0')
-        self.cur.fetchall()
+        return self.cur.fetchall()
 
     def reject_by_key(self, key):
-        self.cur.execute('update wallpapers set rej = 1 where id == ?', key)
+        self.cur.execute('update wallpapers set rej = 1 where id == ?', (key,))
         self.db_conn.commit()
 
     def reject_by_path(self, path):
-        self.cur.execute('update wallpaper set rej = 1 where path == ?', path)
+        self.cur.execute('update wallpaper set rej = 1 where path == ?', (path,))
         self.db_conn.commit()
 
     def is_reject_by_key(self, key):
-        self.cur.execute('select rej from wallpapers where id == ?', key)
+        self.cur.execute('select rej from wallpapers where id == ?', (key,))
         if self.cur.fetch() == 0:
             return True
         else:
             return False
+
+    def update(self, old_cache):
+        # This is grossly inefficient, I don't care
+        new_cache = set(filter(lambda file: self.regex.match(file),
+                               os.listdir(self.dir)))
+        adds = new_cache.difference(old_cache)
+        removes = old_cache.difference(new_cache)
+        if adds != set() or removes != set():
+            for file in adds:
+                self.add_by_path(file)
+            for file in removes:
+                self.remove_by_path(file)
+        return new_cache
