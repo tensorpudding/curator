@@ -4,6 +4,7 @@ import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import random
 import gconf
+import gobject
 
 import db
 
