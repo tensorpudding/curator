@@ -22,7 +22,8 @@ class Database:
                 raise DatabaseWriteError()
             elif e.message == 'unable to open database file':
                 raise DatabaseReadError()
-        
+        self.regex = re.compile(r".+\.jpg|.+\.png|.+\.gif|.+\.bmp")
+
     def __del__(self):
         self.cur.close()
         self.db_conn.commit()
