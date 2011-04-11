@@ -4,6 +4,7 @@ import sys
 sys.path.append("..")
 from curator import db
 
+
 class CuratorDbTests(unittest.TestCase):
 
     def setUp(self):
