@@ -1,8 +1,10 @@
+import os
 import random
 
 import dbus
 import dbus.service
 import gobject
+import pynotify
 
 import db
 
@@ -14,28 +16,30 @@ GCONF_NOTIFY_KEY = '/apps/curator/interface/notifications'
 GCONF_INTERVAL_KEY = '/apps/curator/backend/update_interval'
 GCONF_INDICATOR_KEY = '/apps/curator/interface/indicator'
 
-
 class Queue(list):
 
     def __init__(self, list):
         random.shuffle(list)
         super(Queue, self).__init__(list)
-
+        
 class DBusService(dbus.service.Object):
 
     def __init__(self, database, notify = False, interval = 30,
                  start_loop = True, loop = gobject.MainLoop()):
         self.notify = notify
         self.interval = interval
-        self.loop = loop
         self.current = None
         self.started = False
+        self.loop = loop
 
         self.database = database
         self.database.update()
         self.queue = Queue(self.database.get_all_wallpapers(visible = True))
+        print self.queue
 
-        self.next_wallpaper()
+        self.wallpaper_loop = gobject.timeout_add(self.interval*60, 
+                                               self.__run_wallpaper_loop)
+        self.update_db_loop = gobject.timeout_add(20, self.__run_update_db_loop)
         if start_loop:
             self.start()
 
@@ -43,7 +47,15 @@ class DBusService(dbus.service.Object):
         bus_name = dbus.service.BusName(DBUS_OBJECT, bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, DBUS_PATH)
         self.started = True
-        self.loop.start()
+        self.loop.run()
+
+    def __run_wallpaper_loop(self):
+        self.next_wallpaper()
+        return False
+
+    def __run_update_db_loop(self):
+        self.database.update()
+        return False
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = '', out_signature = '')
@@ -53,20 +65,21 @@ class DBusService(dbus.service.Object):
         """
         if self.queue == Queue([]):
             self.queue = Queue(self.database.get_all_wallpapers(visible = True))
-            if self.queue == Queue([]):
-                return
-        next = self.queue.pop()
-        if not next:
-            return
-        if self.database.is_hidden(next):
-            self.next_wallpaper()
-            return
-        self.current = next
+        if self.queue != Queue([]):
+            next = self.queue.pop()
+            if self.database.is_hidden(next):
+                self.next_wallpaper()
+            else:
+                self.current = next
         ###
         # SET WALLPAPER STUFF GOES HERE
         ###
-        if self.started:
-            self.changed_wallpaper(next)
+                if self.started:
+                    self.changed_wallpaper(next)
+                if self.notify:
+                    n = pynotify.Notification("Now viewing:",
+                                              os.path.basename(self.current))
+                    n.show()
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = '', out_signature = '')
@@ -75,11 +88,14 @@ class DBusService(dbus.service.Object):
         Hides the current wallpaper.
         """
         if self.current:
-            current = self.current
-            self.database.hide_wallpaper(current)
-            self.next_wallpaper()
+            self.database.hide_wallpaper(self.current)
+            if self.notify:
+                n = pynotify.Notification(os.path.basename(self.current) +
+                                          " has been hidden")
+                n.show()
             if self.started:
-                self.was_hidden(current)
+                self.was_hidden(self.current)
+            self.next_wallpaper()
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = '')
@@ -87,9 +103,12 @@ class DBusService(dbus.service.Object):
         """
         Hides the given wallpaper.
         """
-        self.database.hide_wallpaper(path)
-        if self.started:
-            self.was_hidden(path)
+        if self.current == path:
+            self.hide_current()
+        else:
+            self.database.hide_wallpaper(path)
+            if self.started:
+                self.was_hidden(path)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = 'b')

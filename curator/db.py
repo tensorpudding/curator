@@ -54,7 +54,7 @@ class Database:
         files = set()
         for file in os.path.os.listdir(directory):
             file = os.path.join(directory, file)
-            if os.path.isdir(file) and self.recurse_subdirectories:
+            if os.path.isdir(file):
                 files.union(self.__get_files_in_directory(file))
             if os.path.islink(file):
                 return
@@ -132,7 +132,7 @@ class Database:
         """
         self.cur.execute("select rej from wallpapers where path = ?",
                                   (path,))
-        if hidden == (0,):
+        if self.cur.fetchone() == (1,):
             return True
         else:
             return False
