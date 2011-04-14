@@ -24,8 +24,8 @@ class Queue(list):
         
 class DBusService(dbus.service.Object):
 
-    def __init__(self, database, notify = False, interval = 30,
-                 start_loop = True, loop = gobject.MainLoop()):
+    def __init__(self, directory, database, notify = False, interval = 30,
+                 loop = gobject.MainLoop()):
         self.notify = notify
         self.interval = interval
         self.current = None
@@ -35,13 +35,10 @@ class DBusService(dbus.service.Object):
         self.database = database
         self.database.update()
         self.queue = Queue(self.database.get_all_wallpapers(visible = True))
-        print self.queue
 
         self.wallpaper_loop = gobject.timeout_add(self.interval*60, 
                                                self.__run_wallpaper_loop)
         self.update_db_loop = gobject.timeout_add(20, self.__run_update_db_loop)
-        if start_loop:
-            self.start()
 
     def start(self):
         bus_name = dbus.service.BusName(DBUS_OBJECT, bus=dbus.SessionBus())
@@ -138,6 +135,16 @@ class DBusService(dbus.service.Object):
         self.interval = interval
         if self.started:
             self.changed_interval(interval)
+
+    @dbus.service.method(DBUS_INTERFACE,
+                         in_signature = 's', out_signature = '')
+    def update_wallpaper_directory(self, directory):
+        """
+        Set the wallpaper directory. Doing this reinitializes the database.
+        """
+        self.database.reinitialize(directory)
+        if self.started:
+            self.changed_directory(directory)
 
     @dbus.service.method(DBUS_INTERFACE, 
                          in_signature = '', out_signature = '')

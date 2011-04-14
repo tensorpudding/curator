@@ -1,7 +1,10 @@
-import sqlite3
-import re
 import os
 import os.path
+import re
+
+import sqlite3
+
+import thumbnail
 
 class DatabaseReadError(Exception): pass
 class DatabaseWriteError(Exception): pass
@@ -17,7 +20,8 @@ class Database:
     To re-initialize the database, use reinitialize()
     """
     IMAGE_REGEX = re.compile(r".+\.jpg|.+\.png|.+\.gif|.+\.bmp")
-    def __init__(self, directory, path = ":memory:"):
+    def __init__(self, directory, path = ":memory:",
+                 thumbnailer = thumbnail.ThumbnailGenerator()):
         # Connect to database, initialize table if empty
         try:
             self.db_conn = sqlite3.connect(path)
@@ -32,6 +36,7 @@ class Database:
             elif e.message == 'unable to open database file':
                 raise DatabaseReadError()
         self.directory = directory
+        self.thumbnailer = thumbnailer
 
     def __del__(self):
         self.cur.close()
@@ -43,7 +48,7 @@ class Database:
         Recreate the database table.
         """
         self.cur.execute(("create table wallpapers"
-                          "(path text, rej integer)"))
+                          "(path text, rej integer, thumb text)"))
         self.db_conn.commit()
 
     def __get_files_in_directory(self, directory):
@@ -63,7 +68,7 @@ class Database:
                     files.add(file)
         return files
 
-    def _remove_wallpaper(self, path):
+    def remove_wallpaper(self, path):
         """
         Remove a file from the database
 
@@ -71,6 +76,7 @@ class Database:
         """
         self.cur.execute("delete from wallpapers where path = ?", (path,))
         self.db_conn.commit()
+        self.thumbnailer.delete(path)
 
     def reinitialize(self, directory = None):
         """
@@ -88,8 +94,10 @@ class Database:
         """
         Adds the given wallpaper to the database.
         """
-        self.cur.execute("insert into wallpapers (path, rej) values (?,?)",
-                         (path,0))
+        thumb = self.thumbnailer.generate(path)
+        self.cur.execute("insert into wallpapers (path, rej, thumb)" +
+                         " values (?,?,?)",
+                         (path,0,thumb))
         self.db_conn.commit()
 
     def hide_wallpaper(self, path):
@@ -99,6 +107,12 @@ class Database:
         self.cur.execute("update wallpapers set rej = 1 where path == ?",
                          (path,))
         self.db_conn.commit()
+
+    def get_thumbnail(self, path):
+        """
+        Get a thumbnail from the given wallpaper.
+        """
+        pass
 
     def get_all_wallpapers(self, visible = None):
         """
@@ -152,4 +166,6 @@ class Database:
         for file in adds:
             self.add_wallpaper(file)
         for file in removes:
-            self.__remove_wallpaper(file)
+            self.remove_wallpaper(file)
+        for file in files:
+            self.thumbnailer.update(file, self.get_thumbnail(file))

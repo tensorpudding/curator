@@ -6,7 +6,6 @@ import time
 import unittest
 from mock import Mock
 
-sys.path.append('..')
 from curator import backend
 from curator import db
 
@@ -24,7 +23,12 @@ class DBusServerTest(unittest.TestCase):
         list = [str(x) + u".png" for x in range(1,250)]
         self.database.get_all_wallpapers = Mock(return_value = list)
         self.database.is_hidden = Mock(return_value = False)       
-        self.dbus = backend.DBusService(self.database, start_loop = False)
+        self.dbus = backend.DBusService(directory = '',
+                                        database = self.database)
+
+    def tearDown(self):
+        del(self.database)
+        del(self.dbus)
 
     def test_nothing(self):
         """
