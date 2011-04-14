@@ -55,6 +55,7 @@ class DBusServerTest(unittest.TestCase):
         """
         Test that hiding the current wallpaper works.
         """
+        self.dbus.next_wallpaper()
         current = self.dbus.current
         self.dbus.hide_current()
         self.assertEqual(self.database.hide_wallpaper.call_args,
