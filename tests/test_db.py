@@ -5,19 +5,35 @@ import sys
 import random
 
 import unittest
+from mock import Mock
 
-sys.path.append("..")
 from curator import db
 
-WALLPAPERS = os.path.join(os.getcwd(),'wallpapers')
+LOCATION = os.path.join(os.getcwd(),'wallpapers')
 
 class CuratorDbTests(unittest.TestCase):
 
-    def setUp(self):
-        self.database = db.Database(WALLPAPERS)
+    @classmethod
+    def setUpClass(self):
+        os.mkdir(LOCATION)
+        self.__files = []
+        for n in range(1,3):
+            self.__files.append(os.path.join(LOCATION,
+                                             "test" + str(n) + ".png"))
+        for file in self.__files:
+            open(file, 'w').close()
 
-    def tearDown(self):
-        del(self.database)
+    @classmethod
+    def tearDownClass(self):
+        for file in self.__files:
+            os.remove(file)
+        os.rmdir(LOCATION)
+
+    def setUp(self):
+        self.thumb = Mock()
+        self.thumb.generate = Mock(return_value=u"123456789.png")
+        self.thumb.delete = Mock()
+        self.database = db.Database(LOCATION, thumbnailer = self.thumb)
 
     def test_passing(self):
         """
@@ -26,14 +42,18 @@ class CuratorDbTests(unittest.TestCase):
         """
         pass
 
-    def test_add_wallpaper(self):
+    def test_add_remove_wallpaper(self):
         """
-        Test adding a single wallpaper by path
+        Test adding, then removing, a single wallpaper by path
         """
-        test1 = os.path.join(WALLPAPERS, "test1.png")
+        test1 = os.path.join(LOCATION, "test1.png")
         self.database.add_wallpaper(test1)
         wallpapers = self.database.get_all_wallpapers()
         self.assertTrue(test1 in wallpapers)
+        self.database.remove_wallpaper(test1)
+        wallpapers = self.database.get_all_wallpapers()
+        self.assertFalse(test1 in wallpapers)
+
 
     def test_update_idempotent(self):
         """
@@ -52,7 +72,7 @@ class CuratorDbTests(unittest.TestCase):
         self.database.reinitialize()
         before = self.database.get_all_wallpapers()
         # Let's touch a new file
-        newfile = os.path.join(WALLPAPERS, "test0.png")
+        newfile = os.path.join(LOCATION, "test0.png")
         open(newfile, 'w').close()
         self.database.update()
         after = self.database.get_all_wallpapers()
@@ -66,16 +86,11 @@ class CuratorDbTests(unittest.TestCase):
         """
         pass
 
-    def test_zzz_cleanup(self):
-        for file in files:
-            os.remove(file)
-        os.rmdir(WALLPAPERS)
-
+    def test_get_thumbnail(self):
+        """
+        Test that getting a thumbnail works.
+        """
+        pass
+        
 if __name__=='__main__':
-    os.mkdir(WALLPAPERS)
-    files = []
-    for n in range(1,3):
-        files.append(os.path.join(WALLPAPERS, "test" + str(n) + ".png"))
-    for file in files:
-        open(file, 'w').close()
     unittest.main()
