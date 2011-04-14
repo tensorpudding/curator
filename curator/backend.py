@@ -189,3 +189,10 @@ class DBusService(dbus.service.Object):
         Signal emitted when the notification setting is changed.
         """
         pass
+
+    @dbus.service.signal(DBUS_INTERFACE, signature = 's')
+    def changed_directory(self,notifications):
+        """
+        Signal emitted when the wallpaper directory is changed.
+        """
+        pass
