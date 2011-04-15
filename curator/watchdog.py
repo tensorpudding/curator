@@ -20,14 +20,15 @@ class GConfWatchdog:
 
     def get(self):
         """
-        Fetch the current state of configuration, return a tuple
+        Fetch the current state of configuration, return a dict
         """
         client = gconf.client_get_default()
         notify = client.get_bool(GCONF_NOTIFY_KEY)
         interval = client.get_int(GCONF_INTERVAL_KEY)        
         wallpaper_directory = client.get_string(GCONF_WALLPAPER_KEY)
         use_indicator = client.get_bool(GCONF_INDICATOR_KEY)
-        return (notify, interval, wallpaper_directory, use_indicator)
+        return { 'notify': notify, 'interval': interval,
+                 'wallpaper_directory': wallpaper_directory }
 
     def notify_callback(self, client, *args, **kwargs):
         notify = client.get_bool(GCONF_NOTIFY_KEY)
