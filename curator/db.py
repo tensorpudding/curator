@@ -4,7 +4,7 @@ import re
 
 import sqlite3
 
-import thumbnail
+from . import thumbnail
 
 class DatabaseReadError(Exception): pass
 class DatabaseWriteError(Exception): pass
@@ -20,14 +20,14 @@ class Database:
     To re-initialize the database, use reinitialize()
     """
     IMAGE_REGEX = re.compile(r".+\.jpg|.+\.png|.+\.gif|.+\.bmp")
-    def __init__(self, directory, path = ":memory:",
-                 thumbnailer = thumbnail.ThumbnailGenerator()):
+    def __init__(self, directory, path = ":memory:"):
+
         # Connect to database, initialize table if empty
         try:
             self.db_conn = sqlite3.connect(path)
             self.cur = self.db_conn.cursor()
             try:
-                self.cur.execute('select * from wallpapers')
+                self.__execute('select * from wallpapers')
             except:
                 self.__init_db_if_empty()                
         except sqlite3.OperationalError as e:
@@ -35,21 +35,46 @@ class Database:
                 raise DatabaseWriteError()
             elif e.message == 'unable to open database file':
                 raise DatabaseReadError()
-        self.directory = directory
-        self.thumbnailer = thumbnailer
 
-    def __del__(self):
-        self.cur.close()
+        self.directory = directory
+        self.thumbnailer = thumbnail.ThumbnailGenerator()
+
+    def __execute(self, sql_string, parameters = None):
+        """
+        Execute the given SQL query with the given parameters, then commit.
+        """
+        if parameters:
+            self.cur.execute(sql_string, parameters)
+        else:
+            self.cur.execute(sql_string)
         self.db_conn.commit()
-        self.db_conn.close()
+
+    def __fetchone(self, sql_string, parameters = None):
+        """
+        Execute the given SQL, fetch a single result.
+        """
+        if parameters:
+            self.cur.execute(sql_string, parameters)
+        else:
+            self.cur.execute(sql_string)
+        return self.cur.fetchone()
+
+    def __fetchall(self, sql_string, parameters = None):
+        """
+        Execute the given SQL, fetch all matching results.
+        """
+        if parameters:
+            self.cur.execute(sql_string, parameters)
+        else:
+            self.cur.execute(sql_string)
+        return self.cur.fetchall()
 
     def __init_db_if_empty(self):
         """
         Recreate the database table.
         """
-        self.cur.execute(("create table wallpapers"
-                          "(path text, rej integer, thumb text)"))
-        self.db_conn.commit()
+        self.__execute("create table wallpapers " +
+                       "(path text, hide integer, thumb text)")
 
     def __get_files_in_directory(self, directory):
         """
@@ -74,8 +99,7 @@ class Database:
 
         You oughtn't mess with this directly
         """
-        self.cur.execute("delete from wallpapers where path = ?", (path,))
-        self.db_conn.commit()
+        self.__execute("delete from wallpapers where path = ?", (path,))
         self.thumbnailer.delete(path)
 
     def reinitialize(self, directory = None):
@@ -85,7 +109,7 @@ class Database:
 
         Hide statuses are lost.
         """
-        self.cur.execute('delete from wallpapers')
+        self.__execute('delete from wallpapers')
         if directory:
             self.directory = directory
         self.update()
@@ -94,19 +118,18 @@ class Database:
         """
         Adds the given wallpaper to the database.
         """
-        thumb = self.thumbnailer.generate(path)
-        self.cur.execute("insert into wallpapers (path, rej, thumb)" +
-                         " values (?,?,?)",
-                         (path,0,thumb))
-        self.db_conn.commit()
+#        thumb = self.thumbnailer.generate(path)
+        thumb = "foo"
+        self.__execute("insert into wallpapers (path, hide, thumb)" +
+                       " values (?,?,?)",
+                       (path,0,thumb))
 
     def hide_wallpaper(self, path):
         """
         Marks a wallpaper as hidden.
         """
-        self.cur.execute("update wallpapers set rej = 1 where path == ?",
-                         (path,))
-        self.db_conn.commit()
+        self.__execute("update wallpapers set hide = 1 where path == ?",
+                           (path,))
 
     def get_thumbnail(self, path):
         """
@@ -121,21 +144,20 @@ class Database:
         If passed visible = False, restrict to hidden wallpapers.
         """
         if visible == None:
-            self.cur.execute('select path from wallpapers')
+            paths = self.__fetchall('select path from wallpapers')
         elif visible == True:
-            self.cur.execute("select path from wallpapers where rej = 0")
+            paths = self.__fetchall("select path from wallpapers where hide = 0")
         elif visible == False:
-            self.cur.execute("select path from wallpapers where rej = 1")
-        return map(lambda tup: tup[0], self.cur.fetchall())
+            paths = self.__fetchall("select path from wallpapers where hide = 1")
+        return map(lambda tup: tup[0], paths)
 
     def is_in(self, path):
         """
         Returns True if the given wallpaper is in the database, and False
         otherwise.
         """
-        self.cur.execute("select path from wallpapers where path = ?",
-                         (path,))
-        if self.cur.fetchone():
+        if self.__fetchone("select path from wallpapers where path = ?",
+                           (path,)):
             return True
         else:
             return False
@@ -144,9 +166,8 @@ class Database:
         """
         Returns True if the given wallpaper is hidden, and False otherwise.
         """
-        self.cur.execute("select rej from wallpapers where path = ?",
-                                  (path,))
-        if self.cur.fetchone() == (1,):
+        if self.__fetchone("select hide from wallpapers where path = ?",
+                           (path,)) == (1,):
             return True
         else:
             return False
