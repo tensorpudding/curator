@@ -14,5 +14,5 @@ setup(
                    "for GNOME"),
     license = 'BSD License',
     scripts = ['scripts/curator'],
-    package_data = { 'curator': ['curator.ui'] }
+    package_data = { 'curator': ['curator.ui'] },
 )
