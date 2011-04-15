@@ -164,6 +164,13 @@ class DBusService(dbus.service.Object):
         """
         if directory != self.database.directory:
             self.database.reinitialize(directory)
+            self.queue = RandomQueue([])
+            if self.notify:
+                pynotify.init("curator")
+                self.n = pynotify.Notification("Reinitializing database...")
+                self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
+                self.n.show()
+            self.next_wallpaper()
             if self.listening:
                 self.changed_directory(directory)
 
