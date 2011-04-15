@@ -154,7 +154,7 @@ class DBusService(dbus.service.Object):
         """
         self.interval = interval
         if self.listening:
-            self.changed_interval(interval)
+            self.changed_update_interval(interval)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = '')
