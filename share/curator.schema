@@ -1,0 +1,37 @@
+<gconfschemafile>
+  <schemalist>
+    <schema>
+      <key>/schemas/apps/curator/notifications</key>
+      <applyto>/apps/curator/notifications</applyto>
+      <owner>curator</owner>
+      <type>bool</type>
+      <locale name="C">
+	<default>true</default>
+	<short>Toggles notifications</short>
+	<long>Sets whether the application sends notifications through notify-osd when wallpapers change, or are hidden.</long>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/curator/use_indicator</key>
+      <applyto>/apps/curator/user_indicator</applyto>
+      <owner>curator</owner>
+      <type>bool</type>
+      <locale name="C">
+	<default>true</default>
+	<short>Toggles the use of application indicators</short>
+	<long>Sets whether the application uses an application indicator instead of a system tray. If indicators are not available, this setting has no effect.</long>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/curator/update_interval</key>
+      <applyto>/apps/curator/update_interval</applyto>
+      <owner>curator</owner>
+      <type>int</type>
+      <locale name="C">
+	<default>30</default>
+	<short>Sets the update interval in minutes.</short>
+	<long>Sets the update interval in minutes.</long>
+      </locale>
+    </schema>
+  </schemalist>
+</gconfschemafile>
