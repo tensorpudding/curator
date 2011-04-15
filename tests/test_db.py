@@ -5,7 +5,7 @@ import sys
 import random
 
 import unittest
-from mock import Mock
+from mock import Mock, patch
 
 from curator import db
 
@@ -30,10 +30,10 @@ class CuratorDbTests(unittest.TestCase):
         os.rmdir(LOCATION)
 
     def setUp(self):
-        self.thumb = Mock()
-        self.thumb.generate = Mock(return_value=u"123456789.png")
-        self.thumb.delete = Mock()
-        self.database = db.Database(LOCATION, thumbnailer = self.thumb)
+        self.database = db.Database(LOCATION)
+        self.database.thumbnailer = Mock()
+        self.database.thumbnailer.generate = Mock(return_value=u"123456789.png")
+        self.database.thumbnailer.delete = Mock()
 
     def test_passing(self):
         """
