@@ -1,5 +1,6 @@
 import gconf
 
+GCONF_DIR = '/apps/curator'
 GCONF_NOTIFY_KEY = '/apps/curator/notifications'
 GCONF_INTERVAL_KEY = '/apps/curator/update_interval'
 GCONF_WALLPAPER_KEY = '/apps/curator/wallpaper_directory'
@@ -13,6 +14,7 @@ class GConfWatchdog:
         client.
         """
         client = gconf.client_get_default()
+        client.add_dir(GCONF_DIR, gconf.CLIENT_PRELOAD_NONE)
         self.dbus_client = dbus_client
         client.notify_add(GCONF_NOTIFY_KEY, self.notify_callback)
         client.notify_add(GCONF_INTERVAL_KEY, self.interval_callback)
@@ -26,7 +28,6 @@ class GConfWatchdog:
         notify = client.get_bool(GCONF_NOTIFY_KEY)
         interval = client.get_int(GCONF_INTERVAL_KEY)        
         wallpaper_directory = client.get_string(GCONF_WALLPAPER_KEY)
-        use_indicator = client.get_bool(GCONF_INDICATOR_KEY)
         return { 'notify': notify, 'interval': interval,
                  'wallpaper_directory': wallpaper_directory }
 
