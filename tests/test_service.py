@@ -5,14 +5,16 @@ import time
 
 import unittest
 from mock import Mock
+import dbus
+import gconf
 
-from curator import backend
+from curator import service
 from curator import db
 
-class QueueTest(unittest.TestCase):
+class RandomQueueTest(unittest.TestCase):
 
     def test_derangement(self):
-        self.queue = backend.Queue(range(1,200))
+        self.queue = service.RandomQueue(range(1,200))
         self.assertNotEqual(self.queue.sort(), self.queue)
         self.assertEqual(set(range(1,200)), set(self.queue))
 
@@ -23,12 +25,14 @@ class DBusServerTest(unittest.TestCase):
         list = [str(x) + u".png" for x in range(1,250)]
         self.database.get_all_wallpapers = Mock(return_value = list)
         self.database.is_hidden = Mock(return_value = False)       
-        self.dbus = backend.DBusService(directory = '',
-                                        database = self.database)
+        self.gconf = Mock(gconf.Client)
+        self.dbus = service.DBusService(database = self.database,
+                                        notify = False, listen = False)
 
     def tearDown(self):
         del(self.database)
         del(self.dbus)
+        del(self.gconf)
 
     def test_nothing(self):
         """
@@ -47,8 +51,8 @@ class DBusServerTest(unittest.TestCase):
         """
         Test that the wallpaper actually gets set properly.
         """
-
-        # TODO
+        self.dbus.next_wallpaper()
+        self.assertTrue(self.gconf.set_string.called)
         pass
 
     def test_hide_current_wallpaper(self):
@@ -73,17 +77,6 @@ class DBusServerTest(unittest.TestCase):
         self.dbus.is_hidden(u'one.png')
         self.assertEqual(self.database.is_hidden.call_args,
                          ((u'one.png',), {}))
-
-    def test_update_notifications(self):
-        self.dbus.update_notifications(False)
-        self.assertFalse(self.dbus.notify)
-        self.dbus.update_notifications(True)
-        self.assertTrue(self.dbus.notify)
-
-    def test_update_update_interval(self):
-        for x in random.sample(range(1,240), 5):
-            self.dbus.update_update_interval(x)
-            self.assertEqual(x, self.dbus.interval)
 
     def test_hiding(self):
         """

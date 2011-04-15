@@ -5,50 +5,64 @@ import dbus
 import dbus.service
 import gobject
 import pynotify
+import gconf
 
-import db
+from . import db
 
 DBUS_OBJECT = 'org.curator'
 DBUS_PATH = '/org/curator'
 DBUS_INTERFACE = 'org.curator'
 
-GCONF_NOTIFY_KEY = '/apps/curator/interface/notifications'
-GCONF_INTERVAL_KEY = '/apps/curator/backend/update_interval'
-GCONF_INDICATOR_KEY = '/apps/curator/interface/indicator'
-
-class Queue(list):
+class RandomQueue(list):
 
     def __init__(self, list):
         random.shuffle(list)
-        super(Queue, self).__init__(list)
+        super(RandomQueue, self).__init__(list)
         
 class DBusService(dbus.service.Object):
 
-    def __init__(self, directory, database, notify = False, interval = 30,
-                 loop = gobject.MainLoop()):
-        self.notify = notify
-        self.interval = interval
-        self.current = None
-        self.started = False
-        self.loop = loop
+    def __init__(self, database, notify = True, interval = 30, listen = True):
 
         self.database = database
-        self.database.update()
-        self.queue = Queue(self.database.get_all_wallpapers(visible = True))
+        self.notify = notify
+        self.interval = interval
+        self.gconf = gconf.client_get_default()
+        self.current = None
+        self.loop = gobject.MainLoop()
+        self.listening = False
 
+        # Update database, populate queue
+
+        self.database.update()
+        self.queue = RandomQueue(self.database.get_all_wallpapers(visible =
+                                                                  True))
+
+        self.interval_updated = False
         self.wallpaper_loop = gobject.timeout_add(self.interval*60, 
                                                self.__run_wallpaper_loop)
         self.update_db_loop = gobject.timeout_add(20, self.__run_update_db_loop)
 
-    def start(self):
+        if listen:
+            self.listen()
+
+    def listen(self):
+        # D-Bus startup magic
         bus_name = dbus.service.BusName(DBUS_OBJECT, bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, DBUS_PATH)
-        self.started = True
+        name = dbus.service.BusName(DBUS_OBJECT, dbus.SessionBus())
+
+        self.listening = True
         self.loop.run()
 
     def __run_wallpaper_loop(self):
         self.next_wallpaper()
-        return False
+        if self.interval_updated:
+            self.wallpaper_loop = gobject.timeout_add(self.interval*60, 
+                                                      self.__run_wallpaper_loop)
+            self.interval_update = False
+            return True
+        else:
+            return False
 
     def __run_update_db_loop(self):
         self.database.update()
@@ -60,23 +74,26 @@ class DBusService(dbus.service.Object):
         """
         Choose the next wallpaper in the queue and sets it to be the background.
         """
-        if self.queue == Queue([]):
-            self.queue = Queue(self.database.get_all_wallpapers(visible = True))
-        if self.queue != Queue([]):
-            next = self.queue.pop()
-            if self.database.is_hidden(next):
-                self.next_wallpaper()
-            else:
-                self.current = next
-        ###
-        # SET WALLPAPER STUFF GOES HERE
-        ###
-                if self.started:
-                    self.changed_wallpaper(next)
-                if self.notify:
-                    n = pynotify.Notification("Now viewing:",
-                                              os.path.basename(self.current))
-                    n.show()
+        if self.queue == RandomQueue([]):
+            # Queue is empty, let's refresh it
+            visibles = self.database.get_all_wallpapers(visible = True)
+            if visibles != []:
+                self.queue = visibles
+            else:     # no suitable wallpapers to show, do nothing
+                return
+        next = self.queue.pop()
+        if self.database.is_hidden(next):
+            self.next_wallpaper()   # try again
+        else:
+            self.current = next
+            self.gconf.set_string("/desktop/gnome/background/" +
+                                  "picture_filename", next)
+            if self.listening:
+                self.changed_wallpaper(next)
+            if self.notify:
+                n = pynotify.Notification("Now viewing:",
+                                          os.path.basename(self.current))
+                n.show()
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = '', out_signature = '')
@@ -84,14 +101,14 @@ class DBusService(dbus.service.Object):
         """
         Hides the current wallpaper.
         """
-        if self.current:
+        if self.current:  # make sure that we actually set a wallpaper first
             self.database.hide_wallpaper(self.current)
+            if self.listening:
+                self.was_hidden(self.current)
             if self.notify:
                 n = pynotify.Notification(os.path.basename(self.current) +
                                           " has been hidden")
                 n.show()
-            if self.started:
-                self.was_hidden(self.current)
             self.next_wallpaper()
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -104,7 +121,7 @@ class DBusService(dbus.service.Object):
             self.hide_current()
         else:
             self.database.hide_wallpaper(path)
-            if self.started:
+            if self.listening:
                 self.was_hidden(path)
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -115,7 +132,6 @@ class DBusService(dbus.service.Object):
         """
         return self.database.is_hidden(path)
 
-
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 'b', out_signature = '')
     def update_notifications(self, notify):
@@ -123,7 +139,7 @@ class DBusService(dbus.service.Object):
         Enable/disable notifications
         """
         self.notify = notify
-        if self.started:
+        if self.listening:
             self.changed_notifications(notify)
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -133,7 +149,7 @@ class DBusService(dbus.service.Object):
         Set the wallpaper update interval, in minutes
         """
         self.interval = interval
-        if self.started:
+        if self.listening:
             self.changed_interval(interval)
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -142,9 +158,10 @@ class DBusService(dbus.service.Object):
         """
         Set the wallpaper directory. Doing this reinitializes the database.
         """
-        self.database.reinitialize(directory)
-        if self.started:
-            self.changed_directory(directory)
+        if directory != self.database.directory:
+            self.database.reinitialize(directory)
+            if self.listening:
+                self.changed_directory(directory)
 
     @dbus.service.method(DBUS_INTERFACE, 
                          in_signature = '', out_signature = '')
@@ -152,7 +169,7 @@ class DBusService(dbus.service.Object):
         """
         Quit the D-Bus service.
         """
-        if self.started:
+        if self.listening:
             self.loop.quit()
 
     @dbus.service.signal(DBUS_INTERFACE, signature = 's')
@@ -191,7 +208,7 @@ class DBusService(dbus.service.Object):
         pass
 
     @dbus.service.signal(DBUS_INTERFACE, signature = 's')
-    def changed_directory(self,notifications):
+    def changed_directory(self,directory):
         """
         Signal emitted when the wallpaper directory is changed.
         """
