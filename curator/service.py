@@ -93,6 +93,7 @@ class DBusService(dbus.service.Object):
             if self.notify:
                 n = pynotify.Notification("Now viewing:",
                                           os.path.basename(self.current))
+                n.set_timeout(0)
                 n.show()
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -108,6 +109,7 @@ class DBusService(dbus.service.Object):
             if self.notify:
                 n = pynotify.Notification(os.path.basename(self.current) +
                                           " has been hidden")
+                n.set_timeout(0)
                 n.show()
             self.next_wallpaper()
 
