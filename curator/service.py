@@ -91,10 +91,11 @@ class DBusService(dbus.service.Object):
             if self.listening:
                 self.changed_wallpaper(next)
             if self.notify:
-                n = pynotify.Notification("Now viewing:",
-                                          os.path.basename(self.current))
-                n.set_timeout(0)
-                n.show()
+                pynotify.init("curator")
+                self.n = pynotify.Notification("Now viewing:",
+                                               os.path.basename(self.current))
+                self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
+                self.n.show()
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = '', out_signature = '')
@@ -107,10 +108,11 @@ class DBusService(dbus.service.Object):
             if self.listening:
                 self.was_hidden(self.current)
             if self.notify:
-                n = pynotify.Notification(os.path.basename(self.current) +
-                                          " has been hidden")
-                n.set_timeout(0)
-                n.show()
+                pynotify.init("curator")
+                self.n = pynotify.Notification(os.path.basename(self.current) +
+                                               " has been hidden")
+                self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
+                self.n.show()
             self.next_wallpaper()
 
     @dbus.service.method(DBUS_INTERFACE,
