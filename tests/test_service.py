@@ -4,9 +4,10 @@ import random
 import time
 
 import unittest
-from mock import Mock
+from mock import Mock, patch
 import dbus
 import gconf
+import pynotify
 
 from curator import service
 from curator import db
@@ -20,19 +21,20 @@ class RandomQueueTest(unittest.TestCase):
 
 class DBusServerTest(unittest.TestCase):
 
-    def setUp(self):
+    @patch('gconf.client_get_default')
+    def setUp(self, mock_get):
+        self.mockclient = Mock()
+        mock_get.return_value = self.mockclient
         self.database = Mock(db.Database)
         list = [str(x) + u".png" for x in range(1,250)]
         self.database.get_all_wallpapers = Mock(return_value = list)
         self.database.is_hidden = Mock(return_value = False)       
-        self.gconf = Mock(gconf.Client)
         self.dbus = service.DBusService(database = self.database,
                                         notify = False, listen = False)
 
     def tearDown(self):
         del(self.database)
         del(self.dbus)
-        del(self.gconf)
 
     def test_nothing(self):
         """
@@ -47,13 +49,18 @@ class DBusServerTest(unittest.TestCase):
         self.assertEqual(self.database.update.call_count, 1)
         pass
 
+
     def test_next_wallpaper(self):
-        """
-        Test that the wallpaper actually gets set properly.
-        """
         self.dbus.next_wallpaper()
-        self.assertTrue(self.gconf.set_string.called)
-        pass
+        self.assertTrue(self.mockclient.set_string.called)
+
+
+#     def test_next_wallpaper(self):
+#         gconf = Mock()
+#         self.dbus.gconf = gconf
+#         self.dbus.next_wallpaper()
+#         self.assertTrue(gconf.set_string.called)
+
 
     def test_hide_current_wallpaper(self):
         """
@@ -91,6 +98,24 @@ class DBusServerTest(unittest.TestCase):
         next_good = self.dbus.queue[-(n+1)]
         self.dbus.next_wallpaper()
         self.assertEqual(next_good, self.dbus.current)
+
+    @patch('pynotify.Notification')
+    def test_notifications(self, MockNotification):
+
+        self.dbus.update_notifications(True)
+        self.dbus.next_wallpaper()
+        self.assertTrue(MockNotification.called)
+        MockNotification.called = False
+        self.dbus.hide_current()
+        self.assertTrue(MockNotification.called)
+        MockNotification.called = False
+
+        self.dbus.update_notifications(False)
+        self.dbus.next_wallpaper()
+        self.assertFalse(MockNotification.called)
+        MockNotification.called = False
+        self.dbus.hide_current()
+        self.assertFalse(MockNotification.called)
 
 if __name__=='__main__':
     unittest.main()
