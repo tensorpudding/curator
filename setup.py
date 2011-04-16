@@ -13,6 +13,6 @@ setup(
     description = ("An elegant desktop-background switching indicator applet"
                    "for GNOME"),
     license = 'BSD License',
-    scripts = ['scripts/curator'],
+    scripts = ['scripts/curator', 'scripts/curator-dbus'],
     package_data = { 'curator': ['curator.ui'] },
 )

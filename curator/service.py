@@ -1,19 +1,21 @@
 import os
-import random
+import os.path
 
 import dbus
 import dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
 import gobject
 import pynotify
 import gconf
 
 from . import db
+from . import config
 from .queue import RandomQueue
 
 DBUS_OBJECT = 'org.curator'
 DBUS_PATH = '/org/curator'
 DBUS_INTERFACE = 'org.curator'
-        
+
 class DBusService(dbus.service.Object):
 
     def __init__(self, database, notify = True, interval = 30):
@@ -203,3 +205,21 @@ class DBusService(dbus.service.Object):
         Signal emitted when the wallpaper directory is changed.
         """
         pass
+
+
+def main():
+    """
+    Main entry point for dbus service process.
+    """
+    db_path = os.path.join(os.getenv('HOME'),
+                           '.local/share/curator/wallpapers.db')
+    if not os.path.isdir(os.path.dirname(db_path)):
+        os.makedirs(os.path.dirname(db_path))
+    _config = config.get()
+    notify = _config['notify']
+    interval = _config['interval']
+    wallpaper_directory = _config['wallpaper_directory']
+    database = db.Database(wallpaper_directory, path = db_path)
+    DBusGMainLoop(set_as_default=True)
+    DBusService(database = database, notify = notify,
+                interval = interval)
