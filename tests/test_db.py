@@ -16,18 +16,22 @@ class CuratorDbTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         os.mkdir(LOCATION)
-        self.__files = []
-        for n in range(1,3):
-            self.__files.append(os.path.join(LOCATION,
-                                             "test" + str(n) + ".png"))
-        for file in self.__files:
-            open(file, 'w').close()
+        for n in range(1,250):
+            open(os.path.join(LOCATION, "test" + str(n) + ".png"), 'w').close()
+        os.mkdir(LOCATION + '2')
+        for n in range(1,250):
+            open(os.path.join(LOCATION + '2',
+                              "test" + str(n) + ".png"), 'w').close()
 
     @classmethod
     def tearDownClass(self):
-        for file in self.__files:
-            os.remove(file)
+        for n in range(1,250):
+            os.remove(os.path.join(LOCATION, "test" + str(n) + ".png"))
         os.rmdir(LOCATION)
+        for n in range(1,250):
+            os.remove(os.path.join(LOCATION + '2', "test" + str(n) + ".png"))
+        os.rmdir(LOCATION + '2')
+
 
     def setUp(self):
         self.database = db.Database(LOCATION)
@@ -46,14 +50,15 @@ class CuratorDbTests(unittest.TestCase):
         """
         Test adding, then removing, a single wallpaper by path
         """
-        test1 = os.path.join(LOCATION, "test1.png")
-        self.database.add_wallpaper(test1)
+        test = os.path.join(LOCATION, 'test0.png')
+        open(test, 'w').close()
+        self.database.update()
         wallpapers = self.database.get_all_wallpapers()
-        self.assertTrue(test1 in wallpapers)
-        self.database.remove_wallpaper(test1)
+        self.assertTrue(test in wallpapers)
+        os.remove(test)
+        self.database.update()
         wallpapers = self.database.get_all_wallpapers()
-        self.assertFalse(test1 in wallpapers)
-
+        self.assertFalse(test in wallpapers)
 
     def test_update_idempotent(self):
         """
@@ -65,26 +70,13 @@ class CuratorDbTests(unittest.TestCase):
         after = self.database.get_all_wallpapers()
         self.assertEqual(before, after)
 
-    def test_update_when_new(self):
-        """
-        Test that updating adds new files when new files exist.
-        """
-        self.database.reinitialize()
-        before = self.database.get_all_wallpapers()
-        # Let's touch a new file
-        newfile = os.path.join(LOCATION, "test0.png")
-        open(newfile, 'w').close()
-        self.database.update()
-        after = self.database.get_all_wallpapers()
-        os.remove(newfile)
-        self.assertNotIn(newfile, before)
-        self.assertIn(newfile, after)
-
     def test_set_directory(self):
         """
         Test that setting the directory works.
         """
-        pass
+        self.database.reinitialize(LOCATION + '2')
+        after = self.database.get_all_wallpapers()
+        self.assertTrue(os.path.join(LOCATION + '2', "test1.png") in after)
 
     def test_get_thumbnail(self):
         """
