@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=curator
+Comment=An elegant desktop background manager
+Icon=curator
+Exec=curator
+Categories=GNOME;Application;Utility;
