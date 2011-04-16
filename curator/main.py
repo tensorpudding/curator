@@ -15,10 +15,10 @@ from . import watchdog
 from . import db
 
 GLADE_FILE = 'curator.ui'
-#INDICATOR_ICON = 'curator48x48.png'
-#ATTENTION_ICON = 'curator48x48.png'
-INDICATOR_ICON = 'indicator-messages'
-ATTENTION_ICON = 'indicator-messages'
+INDICATOR_ICON = 'curator'
+#ATTENTION_ICON = 'curator'
+#INDICATOR_ICON = 'indicator-messages'
+#ATTENTION_ICON = 'indicator-messages'
 
 GCONF_NOTIFY_KEY = '/apps/curator/notifications'
 GCONF_INTERVAL_KEY = '/apps/curator/update_interval'
@@ -42,7 +42,6 @@ class CuratorIndicator():
         self.ind = appindicator.Indicator("curator", INDICATOR_ICON,
                                           appindicator.CATEGORY_APPLICATION_STATUS)
         self.ind.set_status(appindicator.STATUS_ACTIVE)
-        self.ind.set_attention_icon(ATTENTION_ICON)
         self.dbus_client = dbus_client
 
         self.menu = gtk.Menu()
