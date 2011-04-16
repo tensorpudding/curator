@@ -2,38 +2,18 @@
 
 import os
 from time import sleep
-from dbus.mainloop.glib import DBusGMainLoop
 
-
-import curator.indicator
-from curator.watchdog import GConfWatchdog
-from curator.service import DBusService
-from curator.db import Database
-
-def get_db_path():
-    db_path = os.path.join(os.getenv('HOME'),
-                           '.local/share/curator/wallpapers.db')
-    if not os.path.isdir(os.path.dirname(db_path)):
-        os.makedirs(os.path.dirname(db_path))
-    return db_path
+from curator.config import get
+from curator.indicator import main as gui_main
+from curator.service import main as backend_main
 
 if __name__=='__main__':
-    config = GConfWatchdog()
-    notify = config.get()['notify']
-    interval = config.get()['interval']
-    wallpaper_directory = config.get()['wallpaper_directory']
-    db_path = get_db_path()
     try:
         pid = os.fork()
         if pid == 0:
-            database = Database(wallpaper_directory, path = db_path)
-            DBusGMainLoop(set_as_default=True)
-            DBusService(database = database, notify = notify,
-                        interval = interval, listen = True)
-
+            sleep(5)
+            gui_main()
         else:
-            sleep(2)
-            curator.indicator.main()
+            backend_main()
     except IOError:
-        print "Couldn't fork!"
-
+        pass
