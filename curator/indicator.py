@@ -55,15 +55,15 @@ class CuratorIndicator():
                             "Hide wallpaper")
         hide.show()
 
-        pref = gtk.MenuItem("Preferences")
-        self.menu.append(pref)
-#        pref.connect_object("activate",
+#         pref = gtk.MenuItem("Preferences")
+#         self.menu.append(pref)
+#         pref.connect_object("activate",
 #                            lambda w: self.preference_window.show(),
 #                            "Preferences")
-        pref.show()
+#         pref.show()
 
-        about = gtk.MenuItem("About")
-        self.menu.append(about)
+#         about = gtk.MenuItem("About")
+#         self.menu.append(about)
 #         about.connect_object("activate",
 #                              lambda w: self.about_window.show(),
 #                              "About")
