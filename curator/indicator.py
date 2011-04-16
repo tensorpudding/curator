@@ -90,10 +90,16 @@ def main():
     """
     Main entry point of the indicator
     """
-    bus = dbus.SessionBus()
-    dbus_object = bus.get_object(service.DBUS_OBJECT, service.DBUS_PATH)
-    dbus_client = dbus.Interface(dbus_object, service.DBUS_INTERFACE)
-    config = watchdog.GConfWatchdog()
-    config.listen(dbus_client)
+    # First, attempt to connect to DBus service
+    # If you can't, then give up.
+    try:
+        bus = dbus.SessionBus()
+        dbus_object = bus.get_object(service.DBUS_OBJECT, service.DBUS_PATH)
+        dbus_client = dbus.Interface(dbus_object, service.DBUS_INTERFACE)
+    except:
+        print 'Could not connect to D-Bus backend!'
+        sys.exit(1)
+
+    watchdog = config.GConfWatchdog(dbus_client)
     CuratorIndicator(dbus_client)
     gtk.main()
