@@ -5,20 +5,15 @@ import time
 
 import dbus
 import dbus.service
-from dbus.mainloop.glib import DBusGMainLoop
 import gtk
 import gobject
 import appindicator
 
 from . import service
 from . import watchdog
-from . import db
 
 GLADE_FILE = 'curator.ui'
 INDICATOR_ICON = 'curator'
-#ATTENTION_ICON = 'curator'
-#INDICATOR_ICON = 'indicator-messages'
-#ATTENTION_ICON = 'indicator-messages'
 
 GCONF_NOTIFY_KEY = '/apps/curator/notifications'
 GCONF_INTERVAL_KEY = '/apps/curator/update_interval'
@@ -91,39 +86,14 @@ class CuratorIndicator():
         gtk.main_quit()
                                        
 
-def get_db_path():
-    db_path = os.path.join(os.getenv('HOME'),
-                           '.local/share/curator/wallpapers.db')
-    if not os.path.isdir(os.path.dirname(db_path)):
-        os.makedirs(os.path.dirname(db_path))
-    return db_path
-
 def main():
     """
-    Main entry point of the program
+    Main entry point of the indicator
     """
+    bus = dbus.SessionBus()
+    dbus_object = bus.get_object(service.DBUS_OBJECT, service.DBUS_PATH)
+    dbus_client = dbus.Interface(dbus_object, service.DBUS_INTERFACE)
     config = watchdog.GConfWatchdog()
-    notify = config.get()['notify']
-    interval = config.get()['interval']
-    wallpaper_directory = config.get()['wallpaper_directory']
-    db_path = get_db_path()
-    try:
-        pid = os.fork()
-        if pid == 0:
-            database = db.Database(wallpaper_directory, path = db_path)
-            DBusGMainLoop(set_as_default=True)
-            service.DBusService(database = database,
-                                notify = notify,
-                                interval = interval,
-                                listen = True)
-        else:
-            time.sleep(2)
-            bus = dbus.SessionBus()
-            dbus_object = bus.get_object(service.DBUS_OBJECT, service.DBUS_PATH)
-            dbus_client = dbus.Interface(dbus_object, service.DBUS_INTERFACE)
-            config.listen(dbus_client)
-            CuratorIndicator(dbus_client)
-            gtk.main()
-
-    except IOError:
-        print "Couldn't fork!"
+    config.listen(dbus_client)
+    CuratorIndicator(dbus_client)
+    gtk.main()
