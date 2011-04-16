@@ -5,44 +5,42 @@ import time
 
 import unittest
 from mock import Mock, patch
-import dbus
-import gconf
-import pynotify
 
 from curator import service
 from curator import db
 
-class RandomQueueTest(unittest.TestCase):
-
-    def test_derangement(self):
-        self.queue = service.RandomQueue(range(1,200))
-        self.assertNotEqual(self.queue.sort(), self.queue)
-        self.assertEqual(set(range(1,200)), set(self.queue))
-
+@patch('gobject.timeout_add')
+@patch('gobject.source_remove')
+@patch('gconf.client_get_default')
+@patch('pynotify.Notification')
 class DBusServerTest(unittest.TestCase):
 
+    @patch('gobject.timeout_add')
+    @patch('gobject.source_remove')
     @patch('gconf.client_get_default')
-    def setUp(self, mock_get):
+    @patch('pynotify.Notification')
+    def setUp(self, MockNotification, mock_get, *args):
         self.mockclient = Mock()
         mock_get.return_value = self.mockclient
         self.database = Mock(db.Database)
         list = [str(x) + u".png" for x in range(1,250)]
         self.database.get_all_wallpapers = Mock(return_value = list)
         self.database.is_hidden = Mock(return_value = False)       
+        self.database.directory = 'somewhere'
         self.dbus = service.DBusService(database = self.database,
                                         notify = False, listen = False)
 
-    def tearDown(self):
+    def tearDown(self, *args):
         del(self.database)
         del(self.dbus)
 
-    def test_nothing(self):
+    def test_nothing(self, *args):
         """
         Sanity check.
         """
         pass
 
-    def test_update(self):
+    def test_update(self, *args):
         """
         Test that the database is updated on initialization.
         """
@@ -50,19 +48,11 @@ class DBusServerTest(unittest.TestCase):
         pass
 
 
-    def test_next_wallpaper(self):
+    def test_next_wallpaper(self, *args):
         self.dbus.next_wallpaper()
         self.assertTrue(self.mockclient.set_string.called)
 
-
-#     def test_next_wallpaper(self):
-#         gconf = Mock()
-#         self.dbus.gconf = gconf
-#         self.dbus.next_wallpaper()
-#         self.assertTrue(gconf.set_string.called)
-
-
-    def test_hide_current_wallpaper(self):
+    def test_hide_current_wallpaper(self, *args):
         """
         Test that hiding the current wallpaper works.
         """
@@ -72,7 +62,7 @@ class DBusServerTest(unittest.TestCase):
         self.assertEqual(self.database.hide_wallpaper.call_args,
                          ((current,),{}))
 
-    def test_hide(self):
+    def test_hide(self, *args):
         """
         Test that hiding a wallpaper by name works.
         """
@@ -80,12 +70,12 @@ class DBusServerTest(unittest.TestCase):
         self.assertEqual(self.database.hide_wallpaper.call_args,
                          ((u'one.png',), {}))
 
-    def test_is_hidden(self):
+    def test_is_hidden(self, *args):
         self.dbus.is_hidden(u'one.png')
         self.assertEqual(self.database.is_hidden.call_args,
                          ((u'one.png',), {}))
 
-    def test_hiding(self):
+    def test_hiding(self, *args):
         """
         Test that it properly skips a random number of enqueued wallpapers
         which have been marked as hidden.
@@ -99,8 +89,7 @@ class DBusServerTest(unittest.TestCase):
         self.dbus.next_wallpaper()
         self.assertEqual(next_good, self.dbus.current)
 
-    @patch('pynotify.Notification')
-    def test_notifications(self, MockNotification):
+    def test_notifications(self, MockNotification, *args):
 
         self.dbus.update_notifications(True)
         self.dbus.next_wallpaper()
@@ -116,6 +105,21 @@ class DBusServerTest(unittest.TestCase):
         MockNotification.called = False
         self.dbus.hide_current()
         self.assertFalse(MockNotification.called)
+
+    def test_timeouts(self, skipone, skiptwo, mock_remove, mock_timeout):
+        mock_timeout.called = False
+        self.assertFalse(mock_remove.called)
+        self.dbus.update_wallpaper_directory('somewhere else')
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_timeout.called)
+
+    def test_timeout_update(self, skipone, skiptwo, mock_remove, mock_timeout):
+        mock_timeout.called = False
+        self.assertFalse(mock_remove.called)
+        n = random.choice(range(1,300))
+        self.dbus.update_update_interval(n)
+        self.assertTrue(mock_remove.called)
+        self.assertTrue(mock_timeout.call_args[0][0] == 60000 * n)
 
 if __name__=='__main__':
     unittest.main()
