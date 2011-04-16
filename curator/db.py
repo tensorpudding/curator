@@ -93,15 +93,6 @@ class Database:
                     files.add(file)
         return files
 
-    def remove_wallpaper(self, path):
-        """
-        Remove a file from the database
-
-        You oughtn't mess with this directly
-        """
-        self.__execute("delete from wallpapers where path = ?", (path,))
-        self.thumbnailer.delete(path)
-
     def reinitialize(self, directory = None):
         """
         Re-initialize the database. Wipe out existing table and rescan.
@@ -113,16 +104,6 @@ class Database:
         if directory:
             self.directory = directory
         self.update()
-
-    def add_wallpaper(self, path, visible = True):
-        """
-        Adds the given wallpaper to the database.
-        """
-#        thumb = self.thumbnailer.generate(path)
-        thumb = "foo"
-        self.__execute("insert into wallpapers (path, hide, thumb)" +
-                       " values (?,?,?)",
-                       (path,0,thumb))
 
     def hide_wallpaper(self, path):
         """
@@ -179,14 +160,17 @@ class Database:
 
         Entries which are added are marked as shown by default.
         """
-        # FIX: this is probably inefficient (but it's kinda idiomatic)
+#        pass
+#         # FIX: this is probably inefficient (but it's kinda idiomatic)
         files = self.__get_files_in_directory(self.directory)
         old_files = set(self.get_all_wallpapers())
         adds = files.difference(old_files)
         removes = old_files.difference(files)
         for file in adds:
-            self.add_wallpaper(file)
+            self.__execute("insert into wallpapers (path, hide, thumb)" +
+                           " values (?, ?, ?)", (file,0,"foo"))
         for file in removes:
-            self.remove_wallpaper(file)
+            self.__execute("delete from wallpapers where path = ?", (file,))
+#            self.thumbnailer.delete(path)
         for file in files:
             self.thumbnailer.update(file, self.get_thumbnail(file))
