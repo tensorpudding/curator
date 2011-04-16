@@ -9,12 +9,16 @@ from mock import Mock, patch
 from curator import service
 from curator import db
 
+@patch('dbus.service.Object.add_to_connection')
+@patch('gobject.MainLoop')
 @patch('gobject.timeout_add')
 @patch('gobject.source_remove')
 @patch('gconf.client_get_default')
 @patch('pynotify.Notification')
 class DBusServerTest(unittest.TestCase):
 
+    @patch('dbus.service.Object.add_to_connection')
+    @patch('gobject.MainLoop')
     @patch('gobject.timeout_add')
     @patch('gobject.source_remove')
     @patch('gconf.client_get_default')
@@ -27,8 +31,7 @@ class DBusServerTest(unittest.TestCase):
         self.database.get_all_wallpapers = Mock(return_value = list)
         self.database.is_hidden = Mock(return_value = False)       
         self.database.directory = 'somewhere'
-        self.dbus = service.DBusService(database = self.database,
-                                        notify = False, listen = False)
+        self.dbus = service.DBusService(database = self.database, notify = False)
 
     def tearDown(self, *args):
         del(self.database)
@@ -106,14 +109,16 @@ class DBusServerTest(unittest.TestCase):
         self.dbus.hide_current()
         self.assertFalse(MockNotification.called)
 
-    def test_timeouts(self, skipone, skiptwo, mock_remove, mock_timeout):
+    def test_timeouts(self, skipone, skiptwo, mock_remove,
+                      mock_timeout, *args):
         mock_timeout.called = False
         self.assertFalse(mock_remove.called)
         self.dbus.update_wallpaper_directory('somewhere else')
         self.assertTrue(mock_remove.called)
         self.assertTrue(mock_timeout.called)
 
-    def test_timeout_update(self, skipone, skiptwo, mock_remove, mock_timeout):
+    def test_timeout_update(self, skipone, skiptwo, mock_remove,
+                            mock_timeout, *args):
         mock_timeout.called = False
         self.assertFalse(mock_remove.called)
         n = random.choice(range(1,300))

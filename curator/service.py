@@ -16,14 +16,10 @@ DBUS_INTERFACE = 'org.curator'
         
 class DBusService(dbus.service.Object):
 
-    def __init__(self, database, notify = True, interval = 30, listen = True):
-
-        self.listening = False
-        if listen:
-            bus_name = dbus.service.BusName(DBUS_OBJECT, bus=dbus.SessionBus())
-            dbus.service.Object.__init__(self, bus_name, DBUS_PATH)
-            name = dbus.service.BusName(DBUS_OBJECT, dbus.SessionBus())
-            self.listening = True
+    def __init__(self, database, notify = True, interval = 30):
+        bus_name = dbus.service.BusName(DBUS_OBJECT, bus=dbus.SessionBus())
+        dbus.service.Object.__init__(self, bus_name, DBUS_PATH)
+        name = dbus.service.BusName(DBUS_OBJECT, dbus.SessionBus())
 
         self.database = database
         self.notify = notify
@@ -32,7 +28,6 @@ class DBusService(dbus.service.Object):
         self.current = None
         self.gconf = gconf.client_get_default()
         self.loop = gobject.MainLoop()
-
 
         # Update database, populate queue
 
@@ -43,8 +38,7 @@ class DBusService(dbus.service.Object):
                                                self.__run_wallpaper_loop)
         self.next_wallpaper()
 
-        if listen:
-            self.loop.run()
+        self.loop.run()
 
     def __run_wallpaper_loop(self):
         self.next_wallpaper()
@@ -74,8 +68,7 @@ class DBusService(dbus.service.Object):
             gobject.source_remove(self.wallpaper_loop)
             self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
                                                self.__run_wallpaper_loop)
-            if self.listening:
-                self.changed_wallpaper(next)
+            self.changed_wallpaper(next)
             if self.notify:
                 pynotify.init("curator")
                 self.n = pynotify.Notification("Now viewing:",
@@ -91,8 +84,7 @@ class DBusService(dbus.service.Object):
         """
         if self.current:  # make sure that we actually set a wallpaper first
             self.database.hide_wallpaper(self.current)
-            if self.listening:
-                self.was_hidden(self.current)
+            self.was_hidden(self.current)
             if self.notify:
                 pynotify.init("curator")
                 self.n = pynotify.Notification(os.path.basename(self.current) +
@@ -111,8 +103,7 @@ class DBusService(dbus.service.Object):
             self.hide_current()
         else:
             self.database.hide_wallpaper(path)
-            if self.listening:
-                self.was_hidden(path)
+            self.was_hidden(path)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = 'b')
@@ -129,8 +120,7 @@ class DBusService(dbus.service.Object):
         Enable/disable notifications
         """
         self.notify = notify
-        if self.listening:
-            self.changed_notifications(notify)
+        self.changed_notifications(notify)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 'n', out_signature = '')
@@ -142,8 +132,7 @@ class DBusService(dbus.service.Object):
         gobject.source_remove(self.wallpaper_loop)
         self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
                                                   self.__run_wallpaper_loop)
-        if self.listening:
-            self.changed_update_interval(interval)
+        self.changed_update_interval(interval)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = '')
@@ -162,8 +151,7 @@ class DBusService(dbus.service.Object):
             self.database.reinitialize(directory)
             self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
                                                   self.__run_wallpaper_loop)
-            if self.listening:
-                self.changed_directory(directory)
+            self.changed_directory(directory)
 
     @dbus.service.method(DBUS_INTERFACE, 
                          in_signature = '', out_signature = '')
@@ -171,9 +159,8 @@ class DBusService(dbus.service.Object):
         """
         Quit the D-Bus service.
         """
-        if self.listening:
-            gobject.source_remove(self.wallpaper_loop)
-            self.loop.quit()
+        gobject.source_remove(self.wallpaper_loop)
+        self.loop.quit()
 
     @dbus.service.signal(DBUS_INTERFACE, signature = 's')
     def was_hidden(self,path):
