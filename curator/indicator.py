@@ -10,7 +10,7 @@ import gobject
 import appindicator
 
 from . import service
-from . import watchdog
+from . import config
 
 GLADE_FILE = 'curator.ui'
 INDICATOR_ICON = 'curator'
