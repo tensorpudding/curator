@@ -20,5 +20,5 @@ install_shared:
 test:
 	nosetests
 clean:
-	rm -rf build/
+	rm -rf build/ curator/*.pyc tests/*.pyc
 	$(SETUP) clean
