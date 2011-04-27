@@ -1,19 +1,14 @@
 #!/usr/bin/env python
 
-import os
+import subprocess
 from time import sleep
 
-from curator.config import get
 from curator.indicator import main as gui_main
-from curator.service import main as backend_main
 
 if __name__=='__main__':
-    try:
-        pid = os.fork()
-        if pid == 0:
-            sleep(5)
-            gui_main()
-        else:
-            backend_main()
-    except IOError:
-        pass
+    backend = subprocess.Popen("curator-dbus")
+    sleep(2)
+    if not backend.poll():
+        gui_main()
+    else:
+        print "Failed to start backend!"
