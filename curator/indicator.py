@@ -91,6 +91,8 @@ class CuratorIndicator():
                        self.on_okay_clicked,
                    'on_cancel_clicked':
                        self.on_cancel_clicked,
+                   'on_update_interval_value_changed':
+                       self.on_changed_interval,
                    }
         builder.connect_signals(signals)
         self.prefs_dialog = builder.get_object("preferences")
@@ -101,7 +103,13 @@ class CuratorIndicator():
         notifications = builder.get_object("notifications")
         self.notifications = conf['notify']
         notifications.set_active(self.notifications)
+        update_interval = builder.get_object("update_interval")
+        self.update_interval = conf['interval']
+        update_interval.set_value(self.update_interval)
         self.prefs_dialog.show()
+
+    def on_changed_interval(self, adjustment):
+        self.update_interval = int(adjustment.get_value())
 
     def on_set_directory(self, filechooser):
         self.directory = filechooser.get_current_folder()
@@ -113,6 +121,7 @@ class CuratorIndicator():
         client = gconf.client_get_default()
         client.set_string(config.GCONF_WALLPAPER_KEY, self.directory)
         client.set_bool(config.GCONF_NOTIFY_KEY, self.notifications)
+        client.set_int(config.GCONF_INTERVAL_KEY, self.update_interval)
         self.prefs_dialog.destroy()
 
     def on_cancel_clicked(self, button):
