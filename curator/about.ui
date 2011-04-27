@@ -13,6 +13,7 @@
     <property name="copyright" translatable="yes">2011 Michael Moorman</property>
     <property name="comments" translatable="yes">An elegant wallpaper manager</property>
     <signal name="close" handler="on_about_close" swapped="no"/>
+    <signal name="response" handler="gtk_widget_destroy" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>

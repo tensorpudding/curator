@@ -2,10 +2,11 @@
 <interface>
   <requires lib="gtk+" version="2.24"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkDialog" id="dialog1">
+  <object class="GtkDialog" id="preferences">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
     <property name="type_hint">dialog</property>
+    <signal name="close" handler="on_preferences_close" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
@@ -24,6 +25,7 @@
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="on_cancel_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -32,13 +34,14 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button1">
+              <object class="GtkButton" id="okay">
                 <property name="label">gtk-ok</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="on_okay_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -95,10 +98,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkFileChooserButton" id="filechooserbutton1">
+              <object class="GtkFileChooserButton" id="wallpaper_directory">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="action">select-folder</property>
+                <signal name="file-set" handler="on_wallpaper_directory_file_set" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -116,13 +120,14 @@
           </packing>
         </child>
         <child>
-          <object class="GtkCheckButton" id="checkbutton1">
+          <object class="GtkCheckButton" id="notifications">
             <property name="label" translatable="yes">Enable notifications</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">False</property>
             <property name="use_action_appearance">False</property>
             <property name="draw_indicator">True</property>
+            <signal name="toggled" handler="on_notifications_toggled" swapped="no"/>
           </object>
           <packing>
             <property name="expand">True</property>
@@ -134,7 +139,7 @@
     </child>
     <action-widgets>
       <action-widget response="0">cancel</action-widget>
-      <action-widget response="0">button1</action-widget>
+      <action-widget response="0">okay</action-widget>
     </action-widgets>
   </object>
 </interface>
