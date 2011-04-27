@@ -110,7 +110,14 @@ class Database:
         Marks a wallpaper as hidden.
         """
         self.__execute("update wallpapers set hide = 1 where path == ?",
-                           (path,))
+                       (path,))
+
+    def reveal_wallpaper(self, path):
+        """
+        Marks a wallpaper as visible.
+        """
+        self.__execute("update wallpapers set hide = 0 where path == ?",
+                       (path,))
 
     def get_thumbnail(self, path):
         """
