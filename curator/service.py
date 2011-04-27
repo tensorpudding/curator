@@ -194,28 +194,6 @@ class DBusService(dbus.service.Object):
         """
         pass
 
-    @dbus.service.signal(DBUS_INTERFACE, signature = 'n')
-    def changed_update_interval(self,interval):
-        """
-        Signal emitted when the update interval is changed.
-        """
-        pass
-
-    @dbus.service.signal(DBUS_INTERFACE, signature = 'b')
-    def changed_notifications(self,notifications):
-        """
-        Signal emitted when the notification setting is changed.
-        """
-        pass
-
-    @dbus.service.signal(DBUS_INTERFACE, signature = 's')
-    def changed_directory(self,directory):
-        """
-        Signal emitted when the wallpaper directory is changed.
-        """
-        pass
-
-
 def main():
     """
     Main entry point for dbus service process.
