@@ -8,35 +8,21 @@ import dbus.service
 import gtk
 import gobject
 import appindicator
+import gconf
 
 from . import service
 from . import config
 
-GLADE_FILE = 'curator.ui'
 INDICATOR_ICON = 'curator'
-
-GCONF_NOTIFY_KEY = '/apps/curator/notifications'
-GCONF_INTERVAL_KEY = '/apps/curator/update_interval'
-GCONF_WALLPAPER_KEY = '/apps/curator/wallpaper_directory'
-GCONF_INDICATOR_KEY = '/apps/curator/use_indicator'
 
 class CuratorIndicator():
 
     def __init__(self, dbus_client):
-#         builder = gtk.Builder()
-#         builder.add_from_file(os.path.join(
-#                 os.path.dirname(__file__), GLADE_FILE))
-#         self.preference_window = builder.get_object("preferences")
-#         self.about_window = builder.get_object("about")
-#         builder.connect_signals({ "on_wallpaper_directory_file_set":
-#                                       self.wallpaper_callback,
-#                                   })
-                                       
-#         self.update_adjustment = builder.get_object("interval_adjustment")
 
         self.ind = appindicator.Indicator("curator", INDICATOR_ICON,
                                           appindicator.CATEGORY_APPLICATION_STATUS)
         self.ind.set_status(appindicator.STATUS_ACTIVE)
+
         self.dbus_client = dbus_client
 
         self.menu = gtk.Menu()
@@ -55,18 +41,19 @@ class CuratorIndicator():
                             "Hide wallpaper")
         hide.show()
 
-#         pref = gtk.MenuItem("Preferences")
-#         self.menu.append(pref)
-#         pref.connect_object("activate",
-#                            lambda w: self.preference_window.show(),
-#                            "Preferences")
-#         pref.show()
+        pref = gtk.MenuItem("Preferences")
+        self.menu.append(pref)
+        pref.connect_object("activate",
+                           lambda w: self.preferences(),
+                           "Preferences")
+        pref.show()
 
-#         about = gtk.MenuItem("About")
-#         self.menu.append(about)
-#         about.connect_object("activate",
-#                              lambda w: self.about_window.show(),
-#                              "About")
+        about = gtk.MenuItem("About")
+        self.menu.append(about)
+        about.connect_object("activate",
+                             lambda w: self.about(),
+                             "About")
+        about.show()
 
         quit = gtk.MenuItem("Quit")
         self.menu.append(quit)
@@ -76,10 +63,60 @@ class CuratorIndicator():
 
         quit.show()
         self.ind.set_menu(self.menu)
-                                    
-    def wallpaper_callback(self, filechooser):
+
+    def about(self):
+        builder = gtk.Builder()
+        builder.add_from_file(os.path.join(os.path.dirname(__file__),
+                                                "about.ui"))
+        signals = {'on_about_close':
+                       lambda w: w.hide(),
+                   'on_about_response':
+                       lambda w: w.hide(),
+                   }
+        builder.connect_signals(signals)
+        about_dialog = builder.get_object("about")
+        about_dialog.show()
+
+    def preferences(self):
+        builder = gtk.Builder()
+        builder.add_from_file(os.path.join(os.path.dirname(__file__),
+                                                "preferences.ui"))
+        signals = {'on_wallpaper_directory_file_set':
+                       self.on_set_directory,
+                   'on_notifications_toggled':
+                       self.on_toggle_notify,
+                   'on_preferences_close':
+                       lambda w: w.destroy(),
+                   'on_okay_clicked':
+                       self.on_okay_clicked,
+                   'on_cancel_clicked':
+                       self.on_cancel_clicked,
+                   }
+        builder.connect_signals(signals)
+        self.prefs_dialog = builder.get_object("preferences")
+        conf = config.get()
+        wallpaper_directory = builder.get_object("wallpaper_directory")
+        self.directory = conf['wallpaper_directory']
+        wallpaper_directory.set_current_folder(self.directory)
+        notifications = builder.get_object("notifications")
+        self.notifications = conf['notify']
+        notifications.set_active(self.notifications)
+        self.prefs_dialog.show()
+
+    def on_set_directory(self, filechooser):
+        self.directory = filechooser.get_current_folder()
+
+    def on_toggle_notify(self, toggle):
+        self.notifications = toggle.get_property("active")
+
+    def on_okay_clicked(self, button):
         client = gconf.client_get_default()
-        client.set_string(GCONF_WALLPAPER_KEY, filechooser.get_current_folder())
+        client.set_string(config.GCONF_WALLPAPER_KEY, self.directory)
+        client.set_bool(config.GCONF_NOTIFY_KEY, self.notifications)
+        self.prefs_dialog.destroy()
+
+    def on_cancel_clicked(self, button):
+        self.prefs_dialog.destroy()
 
     def quit(self):
         self.dbus_client.quit()
