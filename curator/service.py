@@ -108,6 +108,15 @@ class DBusService(dbus.service.Object):
             self.was_hidden(path)
 
     @dbus.service.method(DBUS_INTERFACE,
+                         in_signature = 's', out_signature = '')
+    def reveal(self, path):
+        """
+        Unhides the given wallpaper.
+        """
+        self.database.reveal_wallpaper(path)
+        self.was_revealed(path)
+
+    @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = 'b')
     def is_hidden(self, path):
         """
