@@ -13,15 +13,25 @@ import gconf
 from . import service
 from . import config
 
-INDICATOR_ICON = 'curator'
-
 class CuratorIndicator():
 
     def __init__(self, dbus_client):
 
-        self.ind = appindicator.Indicator("curator", INDICATOR_ICON,
+        self.ind = appindicator.Indicator("curator", "curator",
                                           appindicator.CATEGORY_APPLICATION_STATUS)
         self.ind.set_status(appindicator.STATUS_ACTIVE)
+
+        try:
+            theme = gtk.gdk.screen_get_default().get_setting('gtk-icon-theme-name')
+        except:
+            self.ind.set_icon('curator')
+        else:
+            if theme == 'ubuntu-mono-dark':
+                self.ind.set_icon('curator-dark')
+            elif theme == 'ubuntu-mono-light':
+                self.ind.set_icon('curator-light')
+            else:
+                self.ind.set_icon('curator')
 
         self.dbus_client = dbus_client
 
