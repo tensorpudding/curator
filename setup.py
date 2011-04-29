@@ -1,8 +1,17 @@
 import os
+import subprocess
 from distutils.core import setup
+from distutils.command.install import install as _install
 
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+class install(_install):
+
+    def run(self):
+        # Run the normal install
+        _install.run(self)
+        # Post-install configuration goes here
+        # Install gconf schemas
+        subprocess.call(["gconftool-2", "--install-schema-file",
+                         "share/curator.schemas"])
 
 setup(
     name = 'curator',
@@ -13,6 +22,13 @@ setup(
     description = ("An elegant desktop-background switching indicator applet"
                    "for GNOME"),
     license = 'BSD License',
+    cmdclass =  {
+        'install': install,
+        },
     scripts = ['scripts/curator', 'scripts/curator-dbus'],
     package_data = { 'curator': ['*.ui'] },
+    data_files = [('share/icons/scalable/apps',
+                   ['share/curator.svg', 'share/curator-light.svg',
+                    'share/curator-dark.svg']),
+                  ('share/applications', ['share/curator.desktop'])]
 )
