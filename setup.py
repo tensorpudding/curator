@@ -20,7 +20,7 @@ setup(
     author = 'Michael Moorman',
     author_email = 'tensorpuddin@devio.us',
     description = ("An elegant desktop-background switching indicator applet"
-                   "for GNOME"),
+                   "for the GNOME desktop"),
     license = 'BSD License',
     cmdclass =  {
         'install': install,
