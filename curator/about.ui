@@ -9,11 +9,11 @@
     <property name="window_position">center</property>
     <property name="type_hint">dialog</property>
     <property name="program_name">curator</property>
-    <property name="version">0.0.1</property>
+    <property name="version">0.0.2</property>
     <property name="copyright" translatable="yes">2011 Michael Moorman</property>
     <property name="comments" translatable="yes">An elegant wallpaper manager</property>
     <signal name="close" handler="on_about_close" swapped="no"/>
-    <signal name="response" handler="gtk_widget_destroy" swapped="no"/>
+    <signal name="response" handler="on_about_response" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
