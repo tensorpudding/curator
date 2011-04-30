@@ -79,13 +79,16 @@ class CuratorIndicator():
         builder.add_from_file(os.path.join(os.path.dirname(__file__),
                                                 "about.ui"))
         signals = {'on_about_close':
-                       lambda w: w.hide(),
+                       self.on_about_response,
                    'on_about_response':
-                       lambda w: w.hide(),
+                       self.on_about_response,
                    }
         builder.connect_signals(signals)
-        about_dialog = builder.get_object("about")
-        about_dialog.show()
+        self.about_dialog = builder.get_object("about")
+        self.about_dialog.show()
+
+    def on_about_response(self, widget, respid):
+        self.about_dialog.destroy()
 
     def preferences(self):
         builder = gtk.Builder()
