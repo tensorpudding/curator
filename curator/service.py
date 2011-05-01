@@ -131,7 +131,6 @@ class DBusService(dbus.service.Object):
         Enable/disable notifications
         """
         self.notify = notify
-        self.changed_notifications(notify)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 'n', out_signature = '')
@@ -143,7 +142,6 @@ class DBusService(dbus.service.Object):
         gobject.source_remove(self.wallpaper_loop)
         self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
                                                   self.__run_wallpaper_loop)
-        self.changed_update_interval(interval)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature = 's', out_signature = '')
@@ -162,7 +160,6 @@ class DBusService(dbus.service.Object):
             self.database.reinitialize(directory)
             self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
                                                   self.__run_wallpaper_loop)
-            self.changed_directory(directory)
 
     @dbus.service.method(DBUS_INTERFACE, 
                          in_signature = '', out_signature = '')
