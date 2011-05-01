@@ -15,7 +15,7 @@ class install(_install):
 
 setup(
     name = 'curator',
-    version = '0.0.1',
+    version = '0.0.3',
     packages = ['curator'],
     author = 'Michael Moorman',
     author_email = 'tensorpuddin@devio.us',
