@@ -51,12 +51,5 @@ setup(
         },
     scripts = ['scripts/curator', 'scripts/curator-dbus'],
     package_data = { 'curator': ['*.ui'] },
-    data_files = [('share/icons/ubuntu-mono-dark/apps/48',
-                   ['share/icons/ubuntu-mono-dark/apps/48/curator.svg']),
-                  ('share/icons/ubuntu-mono-light/apps/48',
-                   ['share/icons/ubuntu-mono-light/apps/48/curator.svg']),
-                  ('share/icons/hicolor/scalable/apps',
-                   ['share/icons/hicolor/scalable/apps/curator.svg']),
-                  ('share/applications',
-                   ['share/applications/curator.desktop'])]
+    data_files = _data_files,
 )
