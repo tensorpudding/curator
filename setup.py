@@ -36,6 +36,7 @@ _data_files = [
     ('share/icons/ubuntu-mono-light/apps/24', ['share/icons/ubuntu-mono-light/apps/24/curator-tray.svg']),
     ('share/icons/ubuntu-mono-light/apps/48', ['share/icons/ubuntu-mono-light/apps/48/curator-tray.svg']),
     ('share/applications', ['share/applications/curator.desktop']),
+    ('share/man/man1', ['share/man/curator.1', 'share/man/curator-dbus.1']),
     ]
 setup(
     name = 'curator',
