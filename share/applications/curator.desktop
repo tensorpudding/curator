@@ -5,4 +5,4 @@ Name=curator
 Comment=An elegant desktop background manager
 Icon=curator
 Exec=curator
-Categories=GNOME;Application;Utility;
+Categories=GNOME;GTK;Utility;
