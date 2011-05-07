@@ -17,7 +17,7 @@
       <owner>curator</owner>
       <type>int</type>
       <locale name="C">
-	<default>30</default>
+	<default>60</default>
 	<short>Sets the update interval in minutes.</short>
 	<long>Sets the update interval in minutes.</long>
       </locale>
