@@ -16,7 +16,7 @@ def get():
     return { 'notify': notify, 'interval': interval,
              'wallpaper_directory': wallpaper_directory }
 
-class GConfWatchdog:
+class GConfWatchdog(object):
 
     def __init__(self, dbus_client):
         """

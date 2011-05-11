@@ -1,7 +1,7 @@
 import imghdr
 from PIL import Image
 
-class ThumbnailGenerator:
+class ThumbnailGenerator(object):
     
     def __init__(self, geom = (100,100)):
 

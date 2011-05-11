@@ -9,7 +9,7 @@ from . import thumbnail
 class DatabaseReadError(Exception): pass
 class DatabaseWriteError(Exception): pass
 
-class Database:
+class Database(object):
     """
     Class to abstract the connection to the database.
 
