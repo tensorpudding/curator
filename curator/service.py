@@ -6,7 +6,7 @@ import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import gobject
 import pynotify
-import gconf
+from gi.repository import Gio
 
 from . import db
 from . import config
@@ -15,6 +15,8 @@ from .queue import RandomQueue
 DBUS_OBJECT = 'org.curator'
 DBUS_PATH = '/org/curator'
 DBUS_INTERFACE = 'org.curator'
+
+GSETTINGS_WALLPAPER = 'org.gnome.desktop.background'
 
 class DBusService(dbus.service.Object):
 
@@ -28,7 +30,7 @@ class DBusService(dbus.service.Object):
         self.interval = interval
 
         self.current = None
-        self.gconf = gconf.client_get_default()
+        self.gsettings = Gio.Settings.new(GSETTINGS_WALLPAPER)
         self.loop = gobject.MainLoop()
 
         # Update database, populate queue
@@ -65,8 +67,7 @@ class DBusService(dbus.service.Object):
             self.next_wallpaper()   # try again
         else:
             self.current = next
-            self.gconf.set_string("/desktop/gnome/background/" +
-                                  "picture_filename", next)
+            self.gsettings.set_string("picture-uri", "file://" + next)
             gobject.source_remove(self.wallpaper_loop)
             self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
                                                self.__run_wallpaper_loop)
