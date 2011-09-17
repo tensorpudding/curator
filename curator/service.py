@@ -4,9 +4,9 @@ import os.path
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-import gobject
 import pynotify
 from gi.repository import Gio
+from gi.repository import GObject
 
 from . import db
 from . import config
@@ -31,14 +31,14 @@ class DBusService(dbus.service.Object):
 
         self.current = None
         self.gsettings = Gio.Settings.new(GSETTINGS_WALLPAPER)
-        self.loop = gobject.MainLoop()
+        self.loop = GObject.MainLoop()
 
         # Update database, populate queue
 
         self.database.update()
         self.queue = RandomQueue(self.database.get_all_wallpapers(visible =
                                                                   True))
-        self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
+        self.wallpaper_loop = GObject.timeout_add(self.interval*60000, 
                                                self.__run_wallpaper_loop)
         self.next_wallpaper()
 
@@ -68,8 +68,8 @@ class DBusService(dbus.service.Object):
         else:
             self.current = next
             self.gsettings.set_string("picture-uri", "file://" + next)
-            gobject.source_remove(self.wallpaper_loop)
-            self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
+            GObject.source_remove(self.wallpaper_loop)
+            self.wallpaper_loop = GObject.timeout_add(self.interval*60000, 
                                                self.__run_wallpaper_loop)
             self.changed_wallpaper(next)
             if self.notify:
@@ -140,8 +140,8 @@ class DBusService(dbus.service.Object):
         Set the wallpaper update interval, in minutes
         """
         self.interval = interval
-        gobject.source_remove(self.wallpaper_loop)
-        self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
+        GObject.source_remove(self.wallpaper_loop)
+        self.wallpaper_loop = GObject.timeout_add(self.interval*60000, 
                                                   self.__run_wallpaper_loop)
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -156,10 +156,10 @@ class DBusService(dbus.service.Object):
                 self.n = pynotify.Notification("Reinitializing database...")
                 self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
                 self.n.show()
-            gobject.source_remove(self.wallpaper_loop)
+            GObject.source_remove(self.wallpaper_loop)
             self.queue = RandomQueue([])
             self.database.reinitialize(directory)
-            self.wallpaper_loop = gobject.timeout_add(self.interval*60000, 
+            self.wallpaper_loop = GObject.timeout_add(self.interval*60000, 
                                                   self.__run_wallpaper_loop)
 
     @dbus.service.method(DBUS_INTERFACE, 
@@ -168,7 +168,7 @@ class DBusService(dbus.service.Object):
         """
         Quit the D-Bus service.
         """
-        gobject.source_remove(self.wallpaper_loop)
+        GObject.source_remove(self.wallpaper_loop)
         self.loop.quit()
 
     @dbus.service.signal(DBUS_INTERFACE, signature = 's')

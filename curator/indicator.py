@@ -6,7 +6,6 @@ import time
 import dbus
 import dbus.service
 import gtk
-import gobject
 import appindicator
 import gconf
 
