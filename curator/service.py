@@ -1,12 +1,12 @@
 import os
 import os.path
 
+from gi.repository import Gio
+from gi.repository import GObject
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import pynotify
-from gi.repository import Gio
-from gi.repository import GObject
 
 from . import db
 from . import config
