@@ -3,9 +3,9 @@ import os.path
 import sys
 import time
 
+from gi.repository import Gtk
 import dbus
 import dbus.service
-import gtk
 import appindicator
 import gconf
 
@@ -22,37 +22,37 @@ class CuratorIndicator():
 
         self.dbus_client = dbus_client
 
-        self.menu = gtk.Menu()
+        self.menu = Gtk.Menu()
         
-        next = gtk.MenuItem("Next wallpaper")
+        next = Gtk.MenuItem("Next wallpaper")
         self.menu.append(next)
         next.connect_object("activate",
                             lambda w: self.dbus_client.next_wallpaper(),
                             "Next Wallpaper")
         next.show()
         
-        hide = gtk.MenuItem("Hide wallpaper")
+        hide = Gtk.MenuItem("Hide wallpaper")
         self.menu.append(hide)
         hide.connect_object("activate",
                             lambda w: self.dbus_client.hide_current(),
                             "Hide wallpaper")
         hide.show()
 
-        pref = gtk.MenuItem("Preferences")
+        pref = Gtk.MenuItem("Preferences")
         self.menu.append(pref)
         pref.connect_object("activate",
                            lambda w: self.preferences(),
                            "Preferences")
         pref.show()
 
-        about = gtk.MenuItem("About")
+        about = Gtk.MenuItem("About")
         self.menu.append(about)
         about.connect_object("activate",
                              lambda w: self.about(),
                              "About")
         about.show()
 
-        quit = gtk.MenuItem("Quit")
+        quit = Gtk.MenuItem("Quit")
         self.menu.append(quit)
         quit.connect_object("activate",
                             lambda w: self.quit(),
@@ -62,7 +62,7 @@ class CuratorIndicator():
         self.ind.set_menu(self.menu)
 
     def about(self):
-        builder = gtk.Builder()
+        builder = Gtk.Builder()
         builder.add_from_file(os.path.join(os.path.dirname(__file__),
                                                 "about.ui"))
         signals = {'on_about_close':
@@ -78,7 +78,7 @@ class CuratorIndicator():
         self.about_dialog.destroy()
 
     def preferences(self):
-        builder = gtk.Builder()
+        builder = Gtk.Builder()
         builder.add_from_file(os.path.join(os.path.dirname(__file__),
                                                 "preferences.ui"))
         signals = {'on_wallpaper_directory_file_set':
@@ -129,7 +129,7 @@ class CuratorIndicator():
 
     def quit(self):
         self.dbus_client.quit()
-        gtk.main_quit()
+        Gtk.main_quit()
                                        
 
 def main():
@@ -148,4 +148,4 @@ def main():
 
     watchdog = config.GConfWatchdog(dbus_client)
     CuratorIndicator(dbus_client)
-    gtk.main()
+    Gtk.main()
