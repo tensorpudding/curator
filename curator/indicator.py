@@ -1,7 +1,6 @@
 import os
 import os.path
 import sys
-import time
 
 from gi.repository import Gtk
 import dbus
