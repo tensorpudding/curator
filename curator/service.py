@@ -3,10 +3,10 @@ import os.path
 
 from gi.repository import Gio
 from gi.repository import GObject
+from gi.repository import Notify
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-import pynotify
 
 from . import db
 from . import config
@@ -73,10 +73,11 @@ class DBusService(dbus.service.Object):
                                                self.__run_wallpaper_loop)
             self.changed_wallpaper(next)
             if self.notify:
-                pynotify.init("curator")
-                self.n = pynotify.Notification("Now viewing:",
-                                               os.path.basename(next))
-                self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
+                Notify.init("curator")
+                self.n = Notify.Notification()
+                self.n.set_property("summary",
+                                    "Now viewing: " + os.path.basename(next))
+                self.n.set_timeout(Notify.EXPIRES_DEFAULT)
                 self.n.show()
 
     @dbus.service.method(DBUS_INTERFACE,
@@ -89,10 +90,11 @@ class DBusService(dbus.service.Object):
             self.database.hide_wallpaper(self.current)
             self.was_hidden(self.current)
             if self.notify:
-                pynotify.init("curator")
-                self.n = pynotify.Notification(os.path.basename(self.current) +
-                                               " has been hidden")
-                self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
+                Notify.init("curator")
+                self.n.set_property("summary",
+                                    os.path.basename(self.current) +
+                                    " has been hidden")
+                self.n.set_timeout(Notify.EXPIRES_DEFAULT)
                 self.n.show()
             self.next_wallpaper()
 
@@ -152,9 +154,10 @@ class DBusService(dbus.service.Object):
         """
         if directory != self.database.directory:
             if self.notify:
-                pynotify.init("curator")
-                self.n = pynotify.Notification("Reinitializing database...")
-                self.n.set_timeout(pynotify.EXPIRES_DEFAULT)
+                Notify.init("curator")
+                self.n = Notify.Notification()
+                self.n.set_property("summary", "Reinitializing database...")
+                self.n.set_timeout(Notify.EXPIRES_DEFAULT)
                 self.n.show()
             GObject.source_remove(self.wallpaper_loop)
             self.queue = RandomQueue([])
