@@ -208,6 +208,6 @@ def main():
     interval = _config['interval']
     wallpaper_directory = _config['wallpaper_directory']
     database = db.Database(wallpaper_directory, path = db_path)
-    DBusGMainLoop(set_as_default=True)
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     DBusService(database = database, notify = notify,
                 interval = interval)

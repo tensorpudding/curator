@@ -4,7 +4,6 @@ import sys
 
 from gi.repository import Gtk
 import dbus
-import dbus.service
 import appindicator
 import gconf
 
